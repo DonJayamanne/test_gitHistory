@@ -372,7 +372,6 @@
         "lint": "tslint ./src/**/*.ts -t verbose || tslint ./test/**/*.ts -t verbose",
         "buildReact": "webpack -p --progress --colors",
         "watchReact": "webpack --progress --colors --watch",
-        "precommit": "node gulpfile.js",
         "lint-staged": "node gulpfile.js",
         "clean": "gulp clean",
         "cover:enable": "gulp cover:enable",

@@ -94,7 +94,7 @@ export class Git implements IGitService {
             })
             .sort((a, b) => a.name > b.name ? 1 : -1);
     }
-    
+
     public async getOriginType(url?: string): Promise<GitOriginType | undefined> {
         if (!url) {
             url = await this.getOriginUrl();
@@ -114,7 +114,7 @@ export class Git implements IGitService {
         if (!branchName) {
             branchName = await this.getCurrentBranch();
         }
-        
+
         const branch = await this.repo.getBranch(branchName);
 
         if (branch.upstream) {
@@ -132,7 +132,7 @@ export class Git implements IGitService {
         if (pageSize <= 0) {
             // tslint:disable-next-line:no-parameter-reassignment
             const workspace = this.serviceContainer.get<IWorkspaceService>(IWorkspaceService);
-            pageSize = workspace.getConfiguration('gitHistory').get<number>('pageSize', 100);
+            pageSize = workspace.getConfiguration('gitHistory').get<number>('pageSize', 1000);
         }
         const relativePath = file ? await this.getGitRelativePath(file) : undefined;
         const args = this.gitArgsService.getLogArgs(pageIndex, pageSize, branch, searchText, relativePath, lineNumber, author);
@@ -206,7 +206,7 @@ export class Git implements IGitService {
             searchText
         } as LogEntries;
     }
-    
+
     @cache('IGitService')
     public async getCommit(hash: string): Promise<LogEntry | undefined> {
         const commitArgs = this.gitArgsService.getCommitArgs(hash);

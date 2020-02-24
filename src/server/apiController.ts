@@ -9,6 +9,7 @@ import { CommitDetails, FileCommitDetails, BranchDetails } from '../common/types
 import { IServiceContainer } from '../ioc/types';
 import { Avatar, BranchSelection, CommittedFile, IGitService, IGitServiceFactory, LogEntries, LogEntriesResponse, LogEntry, Ref } from '../types';
 import { IApiRouteHandler } from './types';
+import { writeFileSync } from 'fs-extra';
 
 // tslint:disable-next-line:no-require-imports no-var-requires
 
@@ -58,10 +59,10 @@ export class ApiController implements IApiRouteHandler {
         let branchSelection = request.query.pageSize ? parseInt(request.query.branchSelection, 10) as BranchSelection : undefined;
 
         let promise: Promise<LogEntries>;
-            
+
         // @ts-ignore
         promise = (await this.getRepository(decodeURIComponent(request.query.id)))
-            .getLogEntries(pageIndex, pageSize, branch, searchText, file, lineNumber, author)
+            .getLogEntries(pageIndex, 1000, branch, searchText, file, lineNumber, author)
             .then(data => {
                 // tslint:disable-next-line:no-unnecessary-local-variable
                 // @ts-ignore
@@ -76,6 +77,7 @@ export class ApiController implements IApiRouteHandler {
                     searchText,
                     selected: undefined
                 };
+                writeFileSync('/Users/donjayamanne/Desktop/Development/vsc/gitHistoryVSCode/data.json', JSON.stringify(entriesResponse));
                 return entriesResponse;
             });
 
@@ -89,7 +91,7 @@ export class ApiController implements IApiRouteHandler {
     // tslint:disable-next-line:cyclomatic-complexity
     public getBranches = async (request: Request, response: Response) => {
         const id: string = decodeURIComponent(request.query.id);
-        
+
         try {
             const branches = await (await this.getRepository(id)).getBranches();
             response.send(branches);
@@ -112,11 +114,11 @@ export class ApiController implements IApiRouteHandler {
         const gitService = await this.getRepository(id);
         const gitRoot = await gitService.getGitRoot();
         const branch = await gitService.getCurrentBranch();
-        
+
         try {
             let commitPromise = await gitService.getCommit(hash);
 
-            this.commitViewer.viewCommitTree(new CommitDetails(gitRoot, branch, commitPromise as LogEntry));	
+            this.commitViewer.viewCommitTree(new CommitDetails(gitRoot, branch, commitPromise as LogEntry));
 
             response.send(commitPromise);
         } catch (err) {
@@ -151,7 +153,7 @@ export class ApiController implements IApiRouteHandler {
             response.status(500).send(err);
         }
     }
-    
+
     public doActionRef = async (request: Request, response: Response) => {
         const id: string = decodeURIComponent(request.query.id);
 
@@ -162,7 +164,7 @@ export class ApiController implements IApiRouteHandler {
         const actionName = request.param('name');
         //const value = decodeURIComponent(request.query.value);
         const refEntry = request.body as Ref;
-        
+
         switch (actionName) {
             case 'removeTag':
                 await this.commandManager.executeCommand('git.commit.removeTag', new BranchDetails(gitRoot, branch), refEntry.name);
@@ -174,7 +176,7 @@ export class ApiController implements IApiRouteHandler {
                 await this.commandManager.executeCommand('git.commit.removeRemote', new BranchDetails(gitRoot, branch), refEntry.name);
                 break;
         }
-        
+
         response.status(200).send('');
     }
 
