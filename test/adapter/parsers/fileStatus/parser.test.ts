@@ -1,12 +1,16 @@
 import { assert } from 'chai';
-import * as TypeMoq from 'typemoq';
 import { FileStatStatusParser } from '../../../../src/adapter/parsers/fileStatStatus/parser';
-import { ILogService } from '../../../../src/common/types';
 import { Status } from '../../../../src/types';
+import { instance, mock } from 'ts-mockito';
+import { Logger } from '../../../../src/common/log';
 
 describe('Adapter Parser File Status', () => {
+    let parser: FileStatStatusParser;
+    beforeAll(() => {
+        parser = new FileStatStatusParser([instance(mock(Logger))]);
+    });
+
     test('Ensure status can be parsed correctly', () => {
-        const parser = new FileStatStatusParser([TypeMoq.Mock.ofType<ILogService>().object]);
         ['A', 'M', 'D', 'C', 'R', 'C1234', 'R1234', 'U', 'X', 'B', 'T'].forEach(status => {
             assert.isTrue(parser.canParse(status), `Status '${status}' must be parseable`);
         });
@@ -21,7 +25,6 @@ describe('Adapter Parser File Status', () => {
     });
 
     test('Ensure status is parsed correctly', () => {
-        const parser = new FileStatStatusParser([TypeMoq.Mock.ofType<ILogService>().object]);
         const statuses = [
             ['A', Status.Added],
             ['M', Status.Modified],

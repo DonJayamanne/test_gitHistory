@@ -1,20 +1,18 @@
 import { assert, expect } from 'chai';
 import * as path from 'path';
-import * as TypeMoq from 'typemoq';
 import { Uri } from 'vscode';
 import { FileStatParser } from '../../../../src/adapter/parsers/fileStat/parser';
 import { FileStatStatusParser } from '../../../../src/adapter/parsers/fileStatStatus/parser';
-import { IFileStatStatusParser } from '../../../../src/adapter/parsers/types';
-import { ILogService } from '../../../../src/common/types';
 import { Status } from '../../../../src/types';
-import { TestServiceContainer } from '../../../mocks';
+import { Logger } from '../../../../src/common/log';
+import { instance, mock } from 'ts-mockito';
+import { IFileStatParser } from '../../../../src/adapter/parsers';
 
-describe('Adapter Parser File Stat', () => {
+describe('xAdapter Parser File Stat', () => {
     const gitRootPath = path.join('src', 'adapter');
-    const svcContainer = new TestServiceContainer();
+    let parser: IFileStatParser;
     beforeAll(() => {
-        svcContainer.add(IFileStatStatusParser, FileStatStatusParser);
-        svcContainer.addSingletonInstance(ILogService, TypeMoq.Mock.ofType<ILogService>().object);
+        parser = new FileStatParser(new FileStatStatusParser([instance(mock(Logger))]));
     });
     test('Must return the right number of files', () => {
         const numStatFileLog = [
@@ -30,7 +28,6 @@ describe('Adapter Parser File Stat', () => {
             'M\tsrc/adapter/parsers/ioc.ts',
         ];
 
-        const parser = new FileStatParser(svcContainer);
         const files = parser.parse(gitRootPath, numStatFileLog, nameStatusFileLog);
         expect(files).to.have.length(4, 'Incorrect number of entries');
     });
@@ -46,7 +43,6 @@ describe('Adapter Parser File Stat', () => {
             'M\tsrc/adapter/parsers/ioc.ts',
         ];
 
-        const parser = new FileStatParser(svcContainer);
         const files = parser.parse(gitRootPath, numStatFileLog, nameStatusFileLog);
         expect(files).to.have.length(3, 'Incorrect number of entries');
 
@@ -70,7 +66,6 @@ describe('Adapter Parser File Stat', () => {
             'M\tsrc/adapter/parsers/ioc.ts',
         ];
 
-        const parser = new FileStatParser(svcContainer);
         const files = parser.parse(gitRootPath, numStatFileLog, nameStatusFileLog);
         assert.lengthOf(files, 3, 'Incorrect number of entries');
 
@@ -91,7 +86,6 @@ describe('Adapter Parser File Stat', () => {
         const numStatFileLog = [`1\t1\t${filePaths[0]}`, `8\t0\t${filePaths[1]}`, `24\t22\t${filePaths[2]}`];
         const nameStatusFileLog = [`M\t${filePaths[0]}`, `A\t${filePaths[1]}`, `M\t${filePaths[2]}`];
 
-        const parser = new FileStatParser(svcContainer);
         const files = parser.parse(gitRootPath, numStatFileLog, nameStatusFileLog);
         assert.lengthOf(files, 3, 'Incorrect number of entries');
         assert.equal(files[0].uri.fsPath, Uri.file(path.join(gitRootPath, filePaths[0])).fsPath, '0. Incorrect path');
@@ -111,7 +105,6 @@ describe('Adapter Parser File Stat', () => {
         const numStatFileLog = filePaths.map(f => `1\t2\t${f}`);
         const nameStatusFileLog = filePaths.map((f, idx) => `${idx % 2 === 0 ? 'C123' : 'R01'}\t${f}`);
 
-        const parser = new FileStatParser(svcContainer);
         const files = parser.parse(gitRootPath, numStatFileLog, nameStatusFileLog);
         assert.lengthOf(files, filePaths.length, 'Incorrect number of entries');
 

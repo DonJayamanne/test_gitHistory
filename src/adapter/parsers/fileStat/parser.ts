@@ -1,28 +1,28 @@
 import { inject, injectable } from 'inversify';
 import * as path from 'path';
 import { Uri } from 'vscode';
-import { IServiceContainer } from '../../../ioc/types';
 import { CommittedFile, Status, FsUri } from '../../../types';
 import { IFileStatParser, IFileStatStatusParser } from '../types';
 
 @injectable()
 export class FileStatParser implements IFileStatParser {
-    constructor(@inject(IServiceContainer) private serviceContainer: IServiceContainer) {}
+    constructor(@inject(IFileStatStatusParser) private statusParser: IFileStatStatusParser) {}
 
+    /**
+     *  src/client/{common/comms => }/Socket Stream.ts
+     *  src/client/common/{space in folder => comms}/id Dispenser.ts
+     *  src/client/common/space in folder/{idDispenser.ts => id Dispenser.ts}
+     *  src/client/common/{comms => space in folder}/SocketStream.ts
+     *  src/client/common/{comms => }/socketCallbackHandler.ts
+     *  src/client/common/comms/{ => another dir}/id Dispenser.ts
+     *  src/{test/autocomplete => client/common/comms/another dir}/base.test.ts
+     *  src/{client/common/comms/another dir => }/id Dispenser.ts
+     *  src/test/jupyter/{extension.jupyter.comms.jupyterKernelManager.test.ts => jupyterKernelManager.test.ts}
+     *
+     *  // Another exampe is as follows, where a tab is used as a separator
+     *  src/vs/workbench/services/extensions/node/ipcRemoteCom.ts       src/vs/workbench/services/extensions/node/rpcProtocol.ts
+     */
     private static parseFileMovement(fileInfo: string): { original: string; current: string } | undefined {
-        // src/client/{common/comms => }/Socket Stream.ts
-        // src/client/common/{space in folder => comms}/id Dispenser.ts
-        // src/client/common/space in folder/{idDispenser.ts => id Dispenser.ts}
-        // src/client/common/{comms => space in folder}/SocketStream.ts
-        // src/client/common/{comms => }/socketCallbackHandler.ts
-        // src/client/common/comms/{ => another dir}/id Dispenser.ts
-        // src/{test/autocomplete => client/common/comms/another dir}/base.test.ts
-        // src/{client/common/comms/another dir => }/id Dispenser.ts
-        // src/test/jupyter/{extension.jupyter.comms.jupyterKernelManager.test.ts => jupyterKernelManager.test.ts}
-
-        // Another exampe is as follows, where a tab is used as a separator
-        // src/vs/workbench/services/extensions/node/ipcRemoteCom.ts       src/vs/workbench/services/extensions/node/rpcProtocol.ts
-
         const diffSeparator = [' => ', '\t'].reduce<string | undefined>((separator, item) => {
             if (typeof separator === 'string') {
                 return separator;
@@ -129,11 +129,10 @@ export class FileStatParser implements IFileStatParser {
 
                 const statusParts = line.split('\t');
                 const statusCode = statusParts[0].trim();
-                const statusParser = this.serviceContainer.get<IFileStatStatusParser>(IFileStatStatusParser);
-                if (!statusParser.canParse(statusCode)) {
+                if (!this.statusParser.canParse(statusCode)) {
                     return;
                 }
-                const status = statusParser.parse(statusCode)!;
+                const status = this.statusParser.parse(statusCode)!;
                 const currentAndOriginalFile = FileStatParser.getNewAndOldFileNameFromNumStatLine(line, status)!;
                 const oldRelativePath = currentAndOriginalFile ? currentAndOriginalFile.original : undefined;
                 const relativePath = currentAndOriginalFile.current;
